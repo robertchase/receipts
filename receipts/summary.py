@@ -16,7 +16,9 @@ def summary(items):
             total = item.amount
 
     if total != (calculated := food + non_food + tax):
-        raise Exception(f"total ({total}) does not match sum of items ({calculated})")
+        raise Exception(
+            f"total ({total}) does not match sum of items ({calculated})")
+
     return dict(
         total=str(total),
         food=str(food),

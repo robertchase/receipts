@@ -12,56 +12,136 @@ def is_receipt(data):
 
 def classify(data):
     """parse Items from safeway receipt data"""
-    result = []
 
     # remove header
-    data = re.split(r"GROCERY", data, flags=re.DOTALL)[1]
+    _, data = header(data)
 
-    # remove newlines
-    data = data.replace("\n", " ")
+    # separate footer
+    body, remainder = footer(data)
 
-    # for each purchase
-    while (s := re.search("(^.*?) (\d+\.\d\d) (B|T) (.*)", data)):
-        desc, cost, kind, data = s.groups()
-        if kind == "B":
-            kind = "F"
+    # extract items from body
+    normal = sequence(clean(body))
+    result = [
+        Item(kind, desc, Decimal(cost))
+        for desc, cost, kind in normal]
+
+    # extract tax, total and date from footer
+    result.append(Item("X", "Tax", Decimal(tax(remainder))))
+    result.append(Item("T", "Total", Decimal(total(remainder))))
+    result.append(Item("D", "Date", date(remainder)))
+
+    return result
+
+
+def header(data):
+    """chop the header information off the receipt"""
+    return re.split(r"GROCERY.*?\n", data, flags=re.DOTALL)
+
+
+def footer(data):
+    """chop the footer information off the receipt"""
+    return data.split("\nTAX\n")
+
+
+def dollars(data):
+    """extract all dollar.cents lines from data"""
+    result = []
+    for line in data.split("\n"):
+        if re.match(r"\d+\.\d\d", line):
+            result.append(line)
+    return result
+
+
+def tax(data):
+    """extract tax (first dollar value) from footer"""
+    return dollars(data)[0]
+
+
+def total(data):
+    """extract total (second dollar value) from footer"""
+    return dollars(data)[1]
+
+
+def date(data):
+    """extract transaction date from footer"""
+    if (s := re.search(r"(\d\d)/(\d\d)/(\d\d) ", data)):
+        month, day, year = s.groups()
+        return f"20{year}-{month}-{day}"
+
+
+def clean(data):
+    """remove unused lines"""
+    remove = [
+        "Regular Price",
+        "Member Savings",
+        "Age Restricted",
+        "GEN MERCHANDISE",
+        "GROC NONEDIBLE",
+        "LIQUOR",
+        "PRODUCE",
+        "REFRIG/FROZEN",
+        "MISCELLANEOUS",
+    ]
+
+    def keep(data):
+        for check in remove:
+            if data.find(check) >= 0:
+                return False
+        return True
+
+    result = []
+    for line in data.split("\n"):
+        if len(line.strip()):
+            if keep(line):
+                result.append(line)
+    return result
+
+
+def sequence(data):
+    """rearrange lines to match up description and cost
+
+       things can end up misaligned in the ocr output with multiple
+       descriptions or multiple costs grouped together -- this logic tries to
+       remedy the non-lined-up items by grouping orphaned descriptions and
+       costs and matching them up
+
+       return list of (desc, cost, kind)
+    """
+
+    def normalize_kind(kind):
+        if kind == "B":  # indicates a food item
+            return "F"
+        return "N"  # otherwise, non-food
+
+    result = []
+    costs = []
+    descriptions = []
+    for line in data:
+
+        # full match
+        if (m := re.match(r"(.*?) (\d+\.\d\d) ([A-Z])", line)):
+            desc, cost, kind = m.groups()
+            kind = normalize_kind(kind)
+            result.append((desc, cost, kind))
+
+        # cost and kind
+        elif (m := re.match(r"(\d+\.\d\d) ([A-Z])", line)):
+            cost, kind = m.groups()
+            kind = normalize_kind(kind)
+            costs.append((cost, kind))
+
+        # cost
+        elif re.match(r"\d+\.\d\d", line):
+            costs.append((line, normalize_kind("")))  # non-food
+
+        # description (everything else)
         else:
-            kind = "N"
+            descriptions.append(line)
 
-        result.append(Item(kind, desc, Decimal(cost)))
+    for desc, cost in zip(descriptions, costs):
+        cost, kind = cost
+        result.append((desc, cost, kind))
 
-        # after wine
-        if (s := re.match("Age Restricted:\s+\S+ (.*)", data)):
-            data, = s.groups()
-
-        # member discount
-        if (s := re.match("Regular Price\s+\S+ (.*)", data)):
-            data, = s.groups()
-        if (s := re.match("Member Savings\s+\S+ (.*)", data)):
-            data, = s.groups()
-
-        # charge for bags
-        if (s := re.match("(MISCELLANEOUS .+?)(\d+\.\d\d) (.*)", data)):
-            misc, cost, data = s.groups()
-            result.append(Item("N", misc, Decimal(cost)))
-
-    # tax
-    if (s := re.match("TAX .*?(\d+\.\d\d) (.*)", data)):
-        cost, data = s.groups()
-        result.append(Item("X", "Tax", Decimal(cost)))
-
-    # total charged
-    if (s := re.search("BALANCE\s+(\d+\.\d\d) (.*)", data)):
-        cost, data = s.groups()
-        result.append(Item("T", "Total", Decimal(cost)))
-
-    # date of transacdtion
-    if (s := re.search("(\d\d)/(\d\d)/(\d\d) (.*)", data)):
-        month, day, year, data = s.groups()
-        result.append(Item("D", "Date", f"20{year}-{month}-{day}"))
-
-    # remaining data
-    result.append(Item("R", data, 0))
     return result
 
 
