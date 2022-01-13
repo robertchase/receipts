@@ -67,4 +67,4 @@ if __name__ == "__main__":
 
     items = classify(data)
     for i in items:
-        print(i.type, i.desc, i.amount)
+        print(i.kind, i.desc, i.value)

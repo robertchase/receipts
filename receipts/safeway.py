@@ -4,19 +4,19 @@ import re
 from receipts.item import Item
 
 
-def is_receipt(data):
+def is_receipt(data: str) -> bool:
     if re.search("SAFEWAY", data):
         return True
     return False
 
 
-def classify(data):
+def classify(data: str) -> list[Item]:
     """parse Items from safeway receipt data"""
 
     # remove header
     _, data = header(data)
 
-    # separate footer
+    # isolate body
     body, remainder = footer(data)
 
     # extract items from body
@@ -33,43 +33,43 @@ def classify(data):
     return result
 
 
-def header(data):
+def header(data: str) -> tuple[str, str]:
     """chop the header information off the receipt"""
     return re.split(r"GROCERY.*?\n", data, flags=re.DOTALL)
 
 
-def footer(data):
+def footer(data: str) -> tuple[str, str]:
     """chop the footer information off the receipt"""
     return data.split("\nTAX\n")
 
 
-def dollars(data):
+def dollars(data: str) -> list[str]:
     """extract all dollar.cents lines from data"""
     result = []
     for line in data.split("\n"):
-        if re.match(r"\d+\.\d\d", line):
+        if re.match(r"\d+\.\d\d$", line):
             result.append(line)
     return result
 
 
-def tax(data):
+def tax(data: str) -> str:
     """extract tax (first dollar value) from footer"""
     return dollars(data)[0]
 
 
-def total(data):
+def total(data: str) -> str:
     """extract total (second dollar value) from footer"""
     return dollars(data)[1]
 
 
-def date(data):
+def date(data: str) -> str:
     """extract transaction date from footer"""
     if (s := re.search(r"(\d\d)/(\d\d)/(\d\d) ", data)):
         month, day, year = s.groups()
         return f"20{year}-{month}-{day}"
 
 
-def clean(data):
+def clean(data: str) -> list[str]:
     """remove unused lines"""
     remove = [
         "Regular Price",
@@ -97,7 +97,7 @@ def clean(data):
     return result
 
 
-def sequence(data):
+def sequence(data: list[str]) -> list[tuple[str, str, str]]:
     """rearrange lines to match up description and cost
 
        things can end up misaligned in the ocr output with multiple
@@ -108,7 +108,7 @@ def sequence(data):
        return list of (desc, cost, kind)
     """
 
-    def normalize_kind(kind):
+    def normalize_kind(kind: str) -> str:
         if kind == "B":  # indicates a food item
             return "F"
         return "N"  # otherwise, non-food
@@ -153,4 +153,4 @@ if __name__ == "__main__":
 
     items = classify(data)
     for i in items:
-        print(i.type, i.desc, i.amount)
+        print(i.kind, i.desc, i.value)

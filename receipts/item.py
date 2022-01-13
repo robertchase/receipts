@@ -1,4 +1,10 @@
-from collections import namedtuple
+from dataclasses import dataclass
+from decimal import Decimal
+from typing import Union
 
 
-Item = namedtuple("Item", "type, desc, amount")
+@dataclass
+class Item:
+    kind: str
+    desc: str
+    value: Union[str, Decimal]

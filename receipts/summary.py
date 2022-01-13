@@ -6,14 +6,14 @@ from receipts.classify import classify
 def summary(items):
     food = non_food = tax = Decimal("0.00")
     for item in items:
-        if item.type == "F":
-            food += item.amount
-        elif item.type == "N":
-            non_food += item.amount
-        elif item.type == "X":
-            tax += item.amount
-        elif item.type == "T":
-            total = item.amount
+        if item.kind == "F":
+            food += item.value
+        elif item.kind == "N":
+            non_food += item.value
+        elif item.kind == "X":
+            tax += item.value
+        elif item.kind == "T":
+            total = item.value
 
     if total != (calculated := food + non_food + tax):
         raise Exception(
