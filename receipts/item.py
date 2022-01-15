@@ -7,4 +7,4 @@ from typing import Union
 class Item:
     kind: str
     desc: str
-    value: Union[str, Decimal]
+    value: Union[str, Decimal] = Decimal('0.00')

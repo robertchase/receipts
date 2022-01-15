@@ -138,23 +138,67 @@ def test_date():
     assert result == "2022-01-08"
 
 
-def test_clean():
-    cleaned = safeway.clean(BODY)
+def test_remove_labels():
+    cleaned = safeway.remove_labels(BODY)
     assert cleaned == [
-        "JIFFY", "3.99 B", "CHIPS", "2.49 B", "HOT SAUCE", "3.00 B",
-        "COFFEE 11.99 B", "STRAWBRRY JUICE 5.79 B", "FOIL", "5.99 T", "5.97 B",
+        "JIFFY", "3.99 B", "Regular Price 5.49", "Member Savings 1.50-",
+        "CHIPS", "2.49 B", "Regular Price 2.79", "Member Savings 0.30-",
+        "HOT SAUCE", "3.00 B", "Regular Price 3.99", "Member Savings 0.99-",
+        "COFFEE 11.99 B", "Regular Price 14.99", "Member Savings 3.00-",
+        "STRAWBRRY JUICE 5.79 B", "FOIL", "5.99 T", "5.97 B",
         "3 QTY GREEK YOGURT", "2 QTY TISSUE", "SWABS", "10.98 T", "6.99",
-        "WINE 10.99 T"
+        "WINE 10.99 T", "Regular Price 15.70", "Member Savings 4.71-"
     ]
 
 
-def test_sequence():
-    cleaned = safeway.clean(BODY)
-    result = safeway.sequence(cleaned)
-    result == [
-        ("COFFEE", "11.99", "F"), ("STRAWBRRY JUICE", "5.79", "F"),
-        ("WINE", "10.99", "N"), ("JIFFY", "3.99", "F"), ("CHIPS", "2.49", "F"),
-        ("HOT SAUCE", "3.00", "F"), ("FOIL", "5.99", "N"),
-        ("3 QTY GREEK YOGURT", "5.97", "F"), ("2 QTY TISSUE", "10.98", "N"),
-        ("SWABS", "6.99", "N")
+def test_categorize():
+    cleaned = safeway.remove_labels(BODY)
+    lines, costs = safeway.categorize(cleaned)
+    assert lines == [
+        ["JIFFY", 0, "N"], ["Regular Price", "5.49", "N"],
+        ["Member Savings", "1.50-", "N"], ["CHIPS", 0, "N"],
+        ["Regular Price", "2.79", "N"], ["Member Savings", "0.30-", "N"],
+        ["HOT SAUCE", 0, "N"], ["Regular Price", "3.99", "N"],
+        ["Member Savings", "0.99-", "N"], ["COFFEE", "11.99", "F"],
+        ["Regular Price", "14.99", "N"], ["Member Savings", "3.00-", "N"],
+        ["STRAWBRRY JUICE", "5.79", "F"], ["FOIL", 0, "N"],
+        ["3 QTY GREEK YOGURT", 0, "N"], ["2 QTY TISSUE", 0, "N"],
+        ["SWABS", 0, "N"], ["WINE", "10.99", "N"],
+        ["Regular Price", "15.70", "N"], ["Member Savings", "4.71-", "N"]
+    ]
+    assert costs == [
+        ("3.99", "F"), ("2.49", "F"), ("3.00", "F"), ("5.99", "N"),
+        ("5.97", "F"), ("10.98", "N"), ("6.99", "N")
+    ]
+
+
+def test_collate():
+    cleaned = safeway.remove_labels(BODY)
+    lines, costs = safeway.categorize(cleaned)
+    result = safeway.collate(lines, costs)
+    assert result == [
+        ["JIFFY", "3.99", "F"], ["Regular Price", "5.49", "N"],
+        ["Member Savings", "1.50-", "N"], ["CHIPS", "2.49", "F"],
+        ["Regular Price", "2.79", "N"], ["Member Savings", "0.30-", "N"],
+        ["HOT SAUCE", "3.00", "F"], ["Regular Price", "3.99", "N"],
+        ["Member Savings", "0.99-", "N"], ["COFFEE", "11.99", "F"],
+        ["Regular Price", "14.99", "N"], ["Member Savings", "3.00-", "N"],
+        ["STRAWBRRY JUICE", "5.79", "F"], ["FOIL", "5.99", "N"],
+        ["3 QTY GREEK YOGURT", "5.97", "F"], ["2 QTY TISSUE", "10.98", "N"],
+        ["SWABS", "6.99", "N"], ["WINE", "10.99", "N"],
+        ["Regular Price", "15.70", "N"], ["Member Savings", "4.71-", "N"]
+    ]
+
+
+def test_remove_discount():
+    cleaned = safeway.remove_labels(BODY)
+    lines, costs = safeway.categorize(cleaned)
+    collated = safeway.collate(lines, costs)
+    result = safeway.remove_discount(collated)
+    assert result == [
+        ["JIFFY", "3.99", "F"], ["CHIPS", "2.49", "F"],
+        ["HOT SAUCE", "3.00", "F"], ["COFFEE", "11.99", "F"],
+        ["STRAWBRRY JUICE", "5.79", "F"], ["FOIL", "5.99", "N"],
+        ["3 QTY GREEK YOGURT", "5.97", "F"], ["2 QTY TISSUE", "10.98", "N"],
+        ["SWABS", "6.99", "N"], ["WINE", "10.99", "N"]
     ]
