@@ -1,10 +1,11 @@
+from receipts import harristeeter
 from receipts import safeway
 from receipts import wholefoods
 
 
 def classify(data):
 
-    for kind in (safeway, wholefoods):
+    for kind in (harristeeter, safeway, wholefoods):
         if kind.is_receipt(data):
             return kind.classify(data)
 
