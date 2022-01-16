@@ -12,18 +12,16 @@ def is_receipt(data):
 
 def classify(data):
     """parse Items from wholefoods receipt data"""
-    result = []
 
     # remove header
-    data = re.split(r"WH.LE FOODS.*?MARKET\n.+?, [A-Z]{2} \d{5}.*?\n",
-                    data, flags=re.DOTALL)[1]
+    _, data = re.split(r"WH.LE FOODS.*?MARKET\n.+?, [A-Z]{2} \d{5}.*?\n",
+                       data, flags=re.DOTALL)
 
     # remove newlines
-    data = data.replace("\n", " ")
+    body = data.replace("\n", " ")
 
-    # for each purchase
-    while (s := re.search("(^.*?) \$(\d+\.\d\d) (F?T) (.*)", data)):
-        desc, cost, kind, data = s.groups()
+    while (m := re.match(r"(^.*?) \$(\d+\.\d\d) (F?T) (.*)", body)):
+        desc, cost, kind, body = m.groups()
 
         if desc.find("HOT BAR") >= 0:  # treat HOT BAR like food
             kind = "F"
@@ -32,31 +30,27 @@ def classify(data):
         else:
             kind = "N"
 
-        result.append(Item(kind, desc, Decimal(cost)))
+        yield Item(kind, desc, Decimal(cost))
 
-        if (s := re.match("(\*Sale\*.+?)- ?\$(\d+\.\d\d) (.*)", data)):
-            desc, discount, data = s.groups()
-            result.append(Item(kind, desc, -Decimal(discount)))
-            
-        if (s := re.match("(Prime Extra.+?)- ?\$(\d+\.\d\d) (.*)", data)):
-            desc, discount, data = s.groups()
-            result.append(Item(kind, desc, -Decimal(discount)))
-            
-    while (s := re.search("(Tax:? \d\.\d\d%) \$(\d\.\d\d) (.*)", data)):
-        desc, cost, data = s.groups()
-        result.append(Item("X", "Tax", Decimal(cost)))
-            
-    if (s := re.search("Total: +?\$(\d+\.\d\d) (.*)", data)):
-        cost, data = s.groups()
-        result.append(Item("T", "Total", Decimal(cost)))
-            
-    if (s := re.search("(\d\d)/(\d\d)/(20\d\d) (.*)", data)):
-        month, day, year, data = s.groups()
-        result.append(Item("D", "Date", f"{year}-{month}-{day}"))
+        if (s := re.match(r"(\*Sale\*.+?)- ?\$(\d+\.\d\d) (.*)", body)):
+            desc, discount, body = s.groups()
+            yield Item(kind, desc, -Decimal(discount))
 
-    # remaining data
-    result.append(Item("R", data, 0))
-    return result
+        if (s := re.match(r"(Prime Extra.+?)- ?\$(\d+\.\d\d) (.*)", body)):
+            desc, discount, body = s.groups()
+            yield Item(kind, desc, -Decimal(discount))
+
+    while (s := re.search(r"(Tax:? \d\.\d\d%) \$(\d\.\d\d) (.*)", body)):
+        desc, cost, body = s.groups()
+        yield Item("X", "Tax", Decimal(cost))
+
+    if (s := re.search(r"Total: +?\$(\d+\.\d\d) (.*)", body)):
+        cost, body = s.groups()
+        yield Item("T", "Total", Decimal(cost))
+
+    if (s := re.search(r"(\d\d)/(\d\d)/(20\d\d) (.*)", body)):
+        month, day, year, body = s.groups()
+        yield Item("D", "Date", f"{year}-{month}-{day}")
 
 
 if __name__ == "__main__":
