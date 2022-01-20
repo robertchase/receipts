@@ -95,7 +95,7 @@ def remove_labels(data: str) -> list[str]:
 
     def keep(data):
         for check in remove:
-            if data.find(check) >= 0:
+            if data == check:
                 return False
         return True
 
