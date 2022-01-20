@@ -1,0 +1,4 @@
+alias classify="python -m receipts.classify"
+alias safeway="python -m receipts.safeway"
+alias summary="python -m receipts.summary"
+alias vision="python -m receipts.vision"
