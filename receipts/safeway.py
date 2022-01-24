@@ -91,6 +91,7 @@ def remove_labels(data: str) -> list[str]:
         "PRODUCE",
         "REFRIG/FROZEN",
         "MISCELLANEOUS",
+        "MR",  # sometimes this "breaks off" from the "DSPSBL BAG" line
     ]
 
     def keep(data):
