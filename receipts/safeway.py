@@ -1,4 +1,3 @@
-from decimal import Decimal
 import re
 
 import click
@@ -24,21 +23,16 @@ def classify(data: str) -> list[Item]:
     # remove section labels
     trimmed_body = remove_labels(body)
     # separate data into full/partial items and orphaned costs
-    lines, costs = categorize(trimmed_body)
+    items, costs = categorize(trimmed_body)
     # collate orphan costs with incomplete lines
-    collated = collate(lines, costs)
+    collated = collate(items, costs)
     # remove discount lines
-    normal = remove_discount(collated)
-
-    # turn normalized data into Items
-    result = [
-        Item(kind, desc, Decimal(cost))
-        for desc, cost, kind in normal]
+    result = remove_discount(collated)
 
     # extract tax, total and date from footer
-    result.append(Item("X", "Tax", Decimal(tax(remainder))))
-    result.append(Item("T", "Total", Decimal(total(remainder))))
-    result.append(Item("D", "Date", date(remainder)))
+    result.append(Item(Item.TAX, value=tax(remainder)))
+    result.append(Item(Item.TOTAL, value=total(remainder)))
+    result.append(Item(Item.DATE, value=date(remainder)))
 
     return result
 
@@ -82,7 +76,7 @@ def date(data: str) -> str:
 def remove_labels(data: str) -> list[str]:
     """remove unused lines"""
     remove = [
-        "Age Restricted",
+        "Age Restricted: 21",
         "DELI",
         "FLORAL",
         "GEN MERCHANDISE",
@@ -108,69 +102,77 @@ def remove_labels(data: str) -> list[str]:
     return result
 
 
-def categorize(data: list[str]) -> tuple[list[str], list[str]]:
+class Cost(Item):
+    def __init__(self, kind, cost):
+        super().__init__(kind, desc="Cost", value=cost)
+
+    @property
+    def cost(self):
+        return self.value
+
+
+def categorize(data: list[str]) -> tuple[list[Item], list[Cost]]:
     """categorize data into descriptions and costs
 
        things can end up misaligned in the ocr output with multiple
        descriptions or multiple costs grouped together -- this tries to fix
        this by isolating orphaned descriptions and costs
     """
-    lines = []  # list[[desc, cost, kind]]
-    costs = []  # list[[cost, kind]]
+    items = []
+    costs = []
     for line in data:
 
         # full match
         if (m := re.match(r"(.*?) (\d+\.\d\d) (B|T)", line)):
             desc, cost, kind = m.groups()
-            kind = "F" if kind == "B" else "N"
-            lines.append([desc, cost, kind])
+            kind = Item.FOOD if kind == "B" else Item.NON_FOOD
+            items.append(Item(kind, desc, cost))
 
         # "Regular Price" or "Member Savings" and cost
         elif (m := re.match(
-                r"((?:Regular Price)|(?:Member Savings)) (\d+\.\d\d-?)",
+                r"((?:Regular Price)|(?:Member Savings)) (\d+\.\d\d)-?",
                 line)):
             desc, cost = m.groups()
-            lines.append([desc, cost, "N"])
+            items.append(Item(Item.NON_FOOD, desc, cost))
 
         # desc and cost
         elif (m := re.match(r"(.*?) (\d+\.\d\d)", line)):
             desc, cost = m.groups()
-            lines.append([desc, cost, "N"])
+            items.append(Item(Item.NON_FOOD, desc, cost))
 
         # cost and kind
         elif (m := re.match(r"(\d+\.\d\d) (B|T)", line)):
             cost, kind = m.groups()
-            kind = "F" if kind == "B" else "N"
-            costs.append((cost, kind))
+            kind = Item.FOOD if kind == "B" else Item.NON_FOOD
+            costs.append(Cost(kind, cost))
 
         # cost
         elif (m := re.match(r"(\d+\.\d\d-?)", line)):
             cost = m.group(1)
-            costs.append((cost, "N"))
+            costs.append(Cost(Item.NON_FOOD, cost))
 
         # description (everything else)
         else:
-            lines.append([line, 0, "N"])
+            items.append(Item(Item.NON_FOOD, line))
 
-    return lines, costs
+    return items, costs
 
 
-def collate(lines, costs):
+def collate(items, costs):
     """re-unite orphaned descriptions and costs"""
 
-    for line in lines:
-        desc, cost, kind = line
-        if cost == 0:  # every time cost is zero, fill in from "costs"
-            next_cost, costs = costs[0], costs[1:]
-            line[1], line[2] = next_cost
+    for item in items:
+        if item.value == 0:  # every time cost is zero, fill in from next cost
+            cost, costs = costs[0], costs[1:]
+            item.kind = cost.kind
+            item.value = cost.cost
 
-    return lines
+    return items
 
 
-def remove_discount(data: list[tuple[str, str, str]]) -> list[
-        tuple[str, str, str]]:
-    return [item for item in data
-            if item[0] not in ("Regular Price", "Member Savings")]
+def remove_discount(items):
+    return [item for item in items
+            if item.desc not in ("Regular Price", "Member Savings")]
 
 
 @click.group()
@@ -195,10 +197,10 @@ def desc(input):
     data = input.read()
     _, data = header(data)
     body, _ = footer(data)
-    lines, _ = categorize(remove_labels(body))
-    lines = remove_discount(lines)
-    for line in lines:
-        print(line[0])
+    items, _ = categorize(remove_labels(body))
+    items = remove_discount(items)
+    for item in items:
+        print(item.desc)
 
 
 if __name__ == "__main__":

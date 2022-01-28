@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 
 from receipts import safeway
@@ -153,52 +155,35 @@ def test_remove_labels():
 
 def test_categorize():
     cleaned = safeway.remove_labels(BODY)
-    lines, costs = safeway.categorize(cleaned)
-    assert lines == [
-        ["JIFFY", 0, "N"], ["Regular Price", "5.49", "N"],
-        ["Member Savings", "1.50-", "N"], ["CHIPS", 0, "N"],
-        ["Regular Price", "2.79", "N"], ["Member Savings", "0.30-", "N"],
-        ["HOT SAUCE", 0, "N"], ["Regular Price", "3.99", "N"],
-        ["Member Savings", "0.99-", "N"], ["COFFEE", "11.99", "F"],
-        ["Regular Price", "14.99", "N"], ["Member Savings", "3.00-", "N"],
-        ["STRAWBRRY JUICE", "5.79", "F"], ["FOIL", 0, "N"],
-        ["3 QTY GREEK YOGURT", 0, "N"], ["2 QTY TISSUE", 0, "N"],
-        ["SWABS", 0, "N"], ["WINE", "10.99", "N"],
-        ["Regular Price", "15.70", "N"], ["Member Savings", "4.71-", "N"]
-    ]
-    assert costs == [
-        ("3.99", "F"), ("2.49", "F"), ("3.00", "F"), ("5.99", "N"),
-        ("5.97", "F"), ("10.98", "N"), ("6.99", "N")
-    ]
+    items, costs = safeway.categorize(cleaned)
+
+    assert len(items) == 20
+    assert items[0].desc == "JIFFY"
+    assert items[0].value == 0
+    assert items[-1].desc == "Member Savings"
+    assert len(costs) == 7
+    assert costs[0].cost == Decimal("3.99")
+    assert costs[-1].cost == Decimal("6.99")
 
 
 def test_collate():
     cleaned = safeway.remove_labels(BODY)
-    lines, costs = safeway.categorize(cleaned)
-    result = safeway.collate(lines, costs)
-    assert result == [
-        ["JIFFY", "3.99", "F"], ["Regular Price", "5.49", "N"],
-        ["Member Savings", "1.50-", "N"], ["CHIPS", "2.49", "F"],
-        ["Regular Price", "2.79", "N"], ["Member Savings", "0.30-", "N"],
-        ["HOT SAUCE", "3.00", "F"], ["Regular Price", "3.99", "N"],
-        ["Member Savings", "0.99-", "N"], ["COFFEE", "11.99", "F"],
-        ["Regular Price", "14.99", "N"], ["Member Savings", "3.00-", "N"],
-        ["STRAWBRRY JUICE", "5.79", "F"], ["FOIL", "5.99", "N"],
-        ["3 QTY GREEK YOGURT", "5.97", "F"], ["2 QTY TISSUE", "10.98", "N"],
-        ["SWABS", "6.99", "N"], ["WINE", "10.99", "N"],
-        ["Regular Price", "15.70", "N"], ["Member Savings", "4.71-", "N"]
-    ]
+    items, costs = safeway.categorize(cleaned)
+    result = safeway.collate(items, costs)
+
+    assert len(result) == 20
+    assert items[0].desc == "JIFFY"
+    assert items[0].value == Decimal("3.99")
 
 
 def test_remove_discount():
     cleaned = safeway.remove_labels(BODY)
-    lines, costs = safeway.categorize(cleaned)
-    collated = safeway.collate(lines, costs)
+    items, costs = safeway.categorize(cleaned)
+    collated = safeway.collate(items, costs)
     result = safeway.remove_discount(collated)
-    assert result == [
-        ["JIFFY", "3.99", "F"], ["CHIPS", "2.49", "F"],
-        ["HOT SAUCE", "3.00", "F"], ["COFFEE", "11.99", "F"],
-        ["STRAWBRRY JUICE", "5.79", "F"], ["FOIL", "5.99", "N"],
-        ["3 QTY GREEK YOGURT", "5.97", "F"], ["2 QTY TISSUE", "10.98", "N"],
-        ["SWABS", "6.99", "N"], ["WINE", "10.99", "N"]
-    ]
+
+    assert len(result) == 10
+    sum = 0
+    for item in result:
+        sum += item.value
+    assert sum == Decimal("68.18")

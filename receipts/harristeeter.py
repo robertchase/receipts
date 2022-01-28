@@ -1,4 +1,3 @@
-from decimal import Decimal
 import re
 
 from receipts.item import Item
@@ -25,29 +24,29 @@ def classify(data):
             body = m.group(1)  # ignore this
         elif (m := re.match(r"TAX (\d+\.\d\d) (.*)", body)):
             tax, body = m.groups()
-            yield Item("X", "TAX", Decimal(tax))
+            yield Item(Item.TAX, value=tax)
         elif (m := re.match(r"(.*?) (\d+\.\d\d)( |-)([A-Z]) (.*)", body)):
             desc, cost, sep, kind, body = m.groups()
             if desc.find("HOT FOODS") >= 0:
-                kind = "F"  # food bar not considered grocery for tax purposes
+                kind = Item.FOOD
             elif kind == "B":
-                kind = "F"
+                kind = Item.FOOD
             else:
-                kind = "N"
+                kind = Item.NON_FOOD
             if sep == "-":  # discounted amount
                 cost = sep + cost
-            yield Item(kind, desc, Decimal(cost))
+            yield Item(kind, desc, cost)
         elif (m := re.match(r"(.*) - (\d+\.\d\d) (.*)", body)):
             desc, cost, body = m.groups()
-            yield Item("N", desc, Decimal(cost))
+            yield Item(Item.NON_FOOD, desc, cost)
 
     if (s := re.search(r"BALANCE (\d+\.\d\d) ", body)):
         cost = s.group(1)
-        yield Item("T", "Total", Decimal(cost))
+        yield Item(Item.TOTAL, value=cost)
 
     if (s := re.search(r"(\d\d)/(\d\d)/(\d\d) (.*)", body)):
         month, day, year, data = s.groups()
-        yield Item("D", "Date", f"20{year}-{month}-{day}")
+        yield Item(Item.DATE, value=f"20{year}-{month}-{day}")
 
 
 if __name__ == "__main__":
