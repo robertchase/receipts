@@ -1,5 +1,5 @@
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 
 class Item:
@@ -35,7 +35,10 @@ class Item:
             elif value is None:
                 value = Decimal("0.00")
             else:
-                value = Decimal(value)
+                try:
+                    value = Decimal(value)
+                except InvalidOperation as exc:
+                    raise ValueError("invalid number") from exc
         else:
             raise AttributeError(name)
 
@@ -43,11 +46,11 @@ class Item:
 
     def __str__(self):
         if isinstance(self.value, Decimal):
-            value = f" {self.value:>9.2f}"
+            value = f"{self.value:>.2f}"
         else:
             value = self.value
         return (
             f"{self.kind}"
-            f" {self.desc:60}"
+            f" {self.desc}"
             f" {value}"
         )
