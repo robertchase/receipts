@@ -203,5 +203,20 @@ def desc(input):
         print(item.desc)
 
 
+@cli.command("collate")
+@click.argument("input", type=click.File("r"))
+def _collate(input):
+    """display collated items from receipt"""
+    data = input.read()
+    _, data = header(data)
+    body, _ = footer(data)
+    trimmed_body = remove_labels(body)
+    items, costs = categorize(trimmed_body)
+    collated = collate(items, costs)
+
+    for item in collated:
+        print(item)
+
+
 if __name__ == "__main__":
     cli()
