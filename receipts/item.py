@@ -9,6 +9,7 @@ class Item:
     TAX = "X"
     TOTAL = "T"
     DATE = "D"
+    INCOMPLETE = "."
 
     def __init__(self, kind, desc=None, value=None):
         self.kind = kind
@@ -23,7 +24,8 @@ class Item:
 
     def __setattr__(self, name, value):
         if name == "kind":
-            valid = (self.FOOD, self.NON_FOOD, self.TAX, self.TOTAL, self.DATE)
+            valid = (self.FOOD, self.NON_FOOD, self.TAX, self.TOTAL, self.DATE,
+                     self.INCOMPLETE)
             if value not in valid:
                 raise ValueError(f"{name} must be one of {valid}")
         elif name == "desc":
@@ -38,7 +40,7 @@ class Item:
                 try:
                     value = Decimal(value)
                 except InvalidOperation as exc:
-                    raise ValueError("invalid number") from exc
+                    raise ValueError(f"invalid number {value}") from exc
         else:
             raise AttributeError(name)
 

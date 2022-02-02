@@ -147,13 +147,13 @@ def categorize(data: list[str]) -> tuple[list[Item], list[Cost]]:
             costs.append(Cost(kind, cost))
 
         # cost
-        elif (m := re.match(r"(\d+\.\d\d-?)", line)):
-            cost = m.group(1)
-            costs.append(Cost(Item.NON_FOOD, cost))
+        elif (m := re.match(r"(\d+\.\d\d)(-?)", line)):
+            cost, sign = m.groups()
+            costs.append(Cost(Item.NON_FOOD, sign + cost))
 
         # description (everything else)
         else:
-            items.append(Item(Item.NON_FOOD, line))
+            items.append(Item(Item.INCOMPLETE, line))
 
     return items, costs
 
@@ -162,7 +162,9 @@ def collate(items, costs):
     """re-unite orphaned descriptions and costs"""
 
     for item in items:
-        if item.value == 0:  # every time cost is zero, fill in from next cost
+        if item.kind == Item.INCOMPLETE:
+            if not len(costs):
+                raise Exception(f"no matching cost for {item.desc}")
             cost, costs = costs[0], costs[1:]
             item.kind = cost.kind
             item.value = cost.cost
