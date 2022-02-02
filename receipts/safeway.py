@@ -103,8 +103,8 @@ def remove_labels(data: str) -> list[str]:
 
 
 class Description(Item):
-    INCOMPLETE = "."
-    VALID_KIND = Item.VALID_KIND + (INCOMPLETE,)
+    DESCRIPTION = "."
+    VALID_KIND = Item.VALID_KIND + (DESCRIPTION,)
 
 
 class Cost(Item):
@@ -158,7 +158,7 @@ def categorize(data: list[str]) -> tuple[list[Item], list[Cost]]:
 
         # description (everything else)
         else:
-            items.append(Description(Description.INCOMPLETE, line))
+            items.append(Description(Description.DESCRIPTION, line))
 
     return items, costs
 
@@ -167,7 +167,7 @@ def collate(items, costs):
     """re-unite orphaned descriptions and costs"""
 
     for item in items:
-        if item.kind == Description.INCOMPLETE:
+        if item.kind == Description.DESCRIPTION:
             if not len(costs):
                 raise Exception(f"no matching cost for {item.desc}")
             cost, costs = costs[0], costs[1:]
