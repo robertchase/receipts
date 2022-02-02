@@ -9,7 +9,7 @@ class Item:
     TAX = "X"
     TOTAL = "T"
     DATE = "D"
-    INCOMPLETE = "."
+    INCOMPLETE = "."  # used to mark description-only
 
     def __init__(self, kind, desc=None, value=None):
         self.kind = kind
