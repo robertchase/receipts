@@ -102,6 +102,11 @@ def remove_labels(data: str) -> list[str]:
     return result
 
 
+class Description(Item):
+    INCOMPLETE = "."
+    VALID_KIND = Item.VALID_KIND + (INCOMPLETE,)
+
+
 class Cost(Item):
     def __init__(self, kind, cost):
         super().__init__(kind, desc="Cost", value=cost)
@@ -153,7 +158,7 @@ def categorize(data: list[str]) -> tuple[list[Item], list[Cost]]:
 
         # description (everything else)
         else:
-            items.append(Item(Item.INCOMPLETE, line))
+            items.append(Description(Description.INCOMPLETE, line))
 
     return items, costs
 
@@ -162,7 +167,7 @@ def collate(items, costs):
     """re-unite orphaned descriptions and costs"""
 
     for item in items:
-        if item.kind == Item.INCOMPLETE:
+        if item.kind == Description.INCOMPLETE:
             if not len(costs):
                 raise Exception(f"no matching cost for {item.desc}")
             cost, costs = costs[0], costs[1:]
@@ -192,17 +197,28 @@ def parse(input):
         print(i.kind, i.desc, i.value)
 
 
-@cli.command()
+@cli.command("categorize")
 @click.argument("input", type=click.File("r"))
-def desc(input):
-    """display descriptions from receipt"""
+def _categorize(input):
+    """display categorized items from receipt"""
     data = input.read()
     _, data = header(data)
     body, _ = footer(data)
     items, _ = categorize(remove_labels(body))
-    items = remove_discount(items)
     for item in items:
-        print(item.desc)
+        print(item)
+
+
+@cli.command()
+@click.argument("input", type=click.File("r"))
+def costs(input):
+    """display cost from receipt"""
+    data = input.read()
+    _, data = header(data)
+    body, _ = footer(data)
+    _, costs = categorize(remove_labels(body))
+    for item in costs:
+        print(item)
 
 
 @cli.command("collate")

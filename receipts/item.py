@@ -9,7 +9,8 @@ class Item:
     TAX = "X"
     TOTAL = "T"
     DATE = "D"
-    INCOMPLETE = "."  # used to mark description-only
+
+    VALID_KIND = (FOOD, NON_FOOD, TAX, TOTAL, DATE)
 
     def __init__(self, kind, desc=None, value=None):
         self.kind = kind
@@ -24,10 +25,8 @@ class Item:
 
     def __setattr__(self, name, value):
         if name == "kind":
-            valid = (self.FOOD, self.NON_FOOD, self.TAX, self.TOTAL, self.DATE,
-                     self.INCOMPLETE)
-            if value not in valid:
-                raise ValueError(f"{name} must be one of {valid}")
+            if value not in self.VALID_KIND:
+                raise ValueError(f"{name} must be one of {self.VALID_KIND}")
         elif name == "desc":
             if value is None:
                 raise ValueError("desc cannot be None")
