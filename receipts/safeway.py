@@ -76,6 +76,7 @@ def date(data: str) -> str:
 def remove_labels(data: str) -> list[str]:
     """remove unused lines"""
     remove = [
+        "1 QTY",
         "Age Restricted: 21",
         "DELI",
         "FLORAL",
