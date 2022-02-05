@@ -104,6 +104,9 @@ def remove_labels(data: str) -> list[str]:
 
 
 class Description(Item):
+    def __init__(self, description):
+        super().__init__(self.DESCRIPTION, desc=description)
+
     DESCRIPTION = "."
     VALID_KIND = Item.VALID_KIND + (DESCRIPTION,)
 
@@ -159,7 +162,7 @@ def categorize(data: list[str]) -> tuple[list[Item], list[Cost]]:
 
         # description (everything else)
         else:
-            items.append(Description(Description.DESCRIPTION, line))
+            items.append(Description(line))
 
     return items, costs
 
