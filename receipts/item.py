@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
+import json
 
 
 class Item:
@@ -9,17 +10,23 @@ class Item:
     TAX = "X"
     TOTAL = "T"
     DATE = "D"
+    VENDOR = "V"
+    SOURCE = "R"
 
-    VALID_KIND = (FOOD, NON_FOOD, TAX, TOTAL, DATE)
+    VALID_KIND = (FOOD, NON_FOOD, TAX, TOTAL, DATE, VENDOR, SOURCE)
 
     def __init__(self, kind, desc=None, value=None):
         self.kind = kind
-        if self.kind == self.TAX:
-            desc = "Tax"
-        elif self.kind == self.TOTAL:
-            desc = "Total"
-        elif self.kind == self.DATE:
-            desc = "Date"
+
+        if default := {
+                self.TAX: "Tax",
+                self.TOTAL: "Total",
+                self.DATE: "Date",
+                self.VENDOR: "Vendor",
+                self.SOURCE: "Source",
+                }.get(self.kind):
+            desc = default
+
         self.desc = desc
         self.value = value
 
@@ -31,7 +38,9 @@ class Item:
             if value is None:
                 raise ValueError("desc cannot be None")
         elif name == "value":
-            if self.kind == self.DATE:
+            if self.kind in (self.VENDOR, self.SOURCE):
+                pass
+            elif self.kind == self.DATE:
                 datetime.strptime(value, "%Y-%m-%d")  # just checking
             elif value is None:
                 value = Decimal("0.00")
@@ -55,3 +64,17 @@ class Item:
             f" {self.desc}"
             f" {value}"
         )
+
+    def as_dict(self):
+        return dict(
+            kind=self.kind,
+            desc=self.desc,
+            value=f"{v:>.2f}" if isinstance(v := self.value, Decimal) else v
+        )
+
+    @classmethod
+    def loads(cls, data):
+        return cls(**json.loads(data))
+
+    def dumps(self):
+        return json.dumps(self.as_dict())

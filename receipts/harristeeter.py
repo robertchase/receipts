@@ -3,6 +3,9 @@ import re
 from receipts.item import Item
 
 
+NAME = "HARRISTEETER"
+
+
 def is_receipt(data):
     if re.search("Harris Teeter", data):
         return True
@@ -17,6 +20,8 @@ def classify(data):
 
     # remove header
     header, body = re.split(r"VIC CUSTOMER \d* ", data, 1)
+
+    yield Item(Item.VENDOR, value=NAME)
 
     # for each purchase
     while not body.startswith("**** "):  # start of footer

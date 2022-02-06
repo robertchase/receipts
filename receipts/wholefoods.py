@@ -3,6 +3,9 @@ import re
 from receipts.item import Item
 
 
+NAME = "WHOLEFOODS"
+
+
 def is_receipt(data):
     if re.search("WH.LE FOODS", data):
         return True
@@ -19,6 +22,7 @@ def classify(data):
     # remove newlines
     body = data.replace("\n", " ")
 
+    yield Item(Item.VENDOR, value=NAME)
     while (m := re.match(r"(^.*?) \$(\d+\.\d\d) (F?T) (.*)", body)):
         desc, cost, kind, body = m.groups()
 

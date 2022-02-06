@@ -5,6 +5,9 @@ import click
 from receipts.item import Item
 
 
+NAME = "SAFEWAY"
+
+
 def is_receipt(data: str) -> bool:
     if re.search("SAFEWAY", data):
         return True
@@ -28,6 +31,7 @@ def classify(data: str) -> list[Item]:
     collated = collate(items, costs)
     # remove discount lines
     result = remove_discount(collated)
+    result.append(Item(Item.VENDOR, value=NAME))
 
     # extract tax, total and date from footer
     result.append(Item(Item.TAX, value=tax(remainder)))
