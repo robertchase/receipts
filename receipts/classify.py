@@ -9,30 +9,35 @@ from receipts import safeway
 from receipts import wholefoods
 
 
-def classify(data):
+def classify(data, source=None):
 
     for kind in (harristeeter, safeway, wholefoods):
         if kind.is_receipt(data):
-            return kind.classify(data)
+            items = [i for i in kind.classify(data)]
+            if source:
+                items.append(Item(Item.SOURCE, value=source))
+            return items
 
     raise Exception("unable to classify data")
 
 
-def json_dump(items, source_item):
+def json_dump(items):
 
-    date = vendor = None
+    date = vendor = source = None
     for item in items:
         if item.kind == Item.DATE:
             date = item.value
         elif item.kind == Item.VENDOR:
             vendor = item.value
+        elif item.kind == Item.SOURCE:
+            source = item.value
 
     for item in items:
         if item.kind in (Item.FOOD, Item.NON_FOOD):
             ditem = item.as_dict()
             ditem["date"] = date
             ditem["vendor"] = vendor
-            ditem["source"] = source_item.value
+            ditem["source"] = source
             print(json.dumps(ditem))
 
 
@@ -42,15 +47,14 @@ def json_dump(items, source_item):
 def cli(source, json):
 
     data = source.read()
-    source_item = Item(Item.SOURCE, value=os.path.split(source.name)[1])
 
-    items = classify(data)
+    source = os.path.split(source.name)[1]
+    items = classify(data, source=source)
     if json:
-        json_dump(items, source_item)
+        json_dump(items)
     else:
         for item in items:
             print(item)
-        print(source_item)
 
 
 if __name__ == "__main__":
