@@ -6,37 +6,23 @@ from receipts.item import Item
 
 
 def summary(items):
-    food = non_food = tax = Decimal("0.00")
-    vendor = source = None
+    sum = {Item.FOOD: Decimal("0.00"), Item.NON_FOOD: Decimal("0.00")}
     for item in items:
-        if item.kind == Item.FOOD:
-            food += item.value
-        elif item.kind == Item.NON_FOOD:
-            non_food += item.value
-        elif item.kind == Item.TAX:
-            tax += item.value
-        elif item.kind == Item.TOTAL:
-            total = item.value
-        elif item.kind == Item.DATE:
-            date = item.value
-        elif item.kind == Item.VENDOR:
-            vendor = item.value
-        elif item.kind == Item.SOURCE:
-            source = item.value
+        if isinstance(item.value, Decimal):
+            if item.kind not in sum:
+                sum[item.kind] = Decimal("0.00")
+            sum[item.kind] += item.value
+        else:
+            sum[item.kind] = item.value
 
-    if total != (calculated := food + non_food + tax):
+    if (total := sum[Item.TOTAL]) != (
+            calculated := sum.get(Item.FOOD) +
+            sum.get(Item.NON_FOOD) +
+            sum[Item.TAX]):
         raise Exception(
             f"total ({total}) does not match sum of items ({calculated})")
 
-    return dict(
-        date=date,
-        total=total,
-        food=food,
-        non_food=non_food,
-        tax=tax,
-        vendor=vendor,
-        source=source,
-    )
+    return {Item.KIND_NAMES[key]: sum.get(key) for key in Item.VALID_KIND}
 
 
 if __name__ == "__main__":

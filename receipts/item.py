@@ -13,7 +13,17 @@ class Item:
     VENDOR = "V"
     SOURCE = "R"
 
-    VALID_KIND = (FOOD, NON_FOOD, TAX, TOTAL, DATE, VENDOR, SOURCE)
+    VALID_KIND = (DATE, TOTAL, FOOD, NON_FOOD, TAX, VENDOR, SOURCE)
+
+    KIND_NAMES = {
+        DATE: "date",
+        TOTAL: "total",
+        FOOD: "food",
+        NON_FOOD: "non_food",
+        TAX: "tax",
+        VENDOR: "vendor",
+        SOURCE: "source",
+    }
 
     def __init__(self, kind, desc=None, value=None):
         self.kind = kind
