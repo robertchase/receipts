@@ -29,12 +29,12 @@ if __name__ == "__main__":
     import os
     import sys
 
-    for name in sys.argv[1:]:
+    for path in sys.argv[1:]:
 
-        with open(name) as source:
+        with open(path) as source:
             data = source.read()
 
-        source_name = os.path.split(name)[1]
+        name = os.path.split(path)[1]
 
         class ItemDecoder(json.JSONEncoder):
             def default(self, obj):
@@ -42,5 +42,5 @@ if __name__ == "__main__":
                     return str(obj)
                 return json.JSONEncoder.default(self, obj)
 
-        items = classify(data, source=source_name)
+        items = classify(data, source=name)
         print(json.dumps(summary(items), cls=ItemDecoder))
