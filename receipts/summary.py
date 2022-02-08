@@ -43,16 +43,18 @@ if __name__ == "__main__":
     import os
     import sys
 
-    with open(sys.argv[1]) as source:
-        data = source.read()
+    for name in sys.argv[1:]:
 
-    source_name = os.path.split(sys.argv[1])[1]
+        with open(name) as source:
+            data = source.read()
 
-    class ItemDecoder(json.JSONEncoder):
-        def default(self, obj):
-            if isinstance(obj, Decimal):
-                return str(obj)
-            return json.JSONEncoder.default(self, obj)
+        source_name = os.path.split(name)[1]
 
-    items = classify(data, source=source_name)
-    print(json.dumps(summary(items), cls=ItemDecoder))
+        class ItemDecoder(json.JSONEncoder):
+            def default(self, obj):
+                if isinstance(obj, Decimal):
+                    return str(obj)
+                return json.JSONEncoder.default(self, obj)
+
+        items = classify(data, source=source_name)
+        print(json.dumps(summary(items), cls=ItemDecoder))

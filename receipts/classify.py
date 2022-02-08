@@ -42,19 +42,21 @@ def json_dump(items):
 
 
 @click.command()
-@click.argument("source", type=click.File())
+@click.argument("source", nargs=-1)
 @click.option("--json", "-j", is_flag=True, default=False)
 def cli(source, json):
 
-    data = source.read()
+    for path in source:
+        with open(path) as filedata:
+            data = filedata.read()
 
-    source = os.path.split(source.name)[1]
-    items = classify(data, source=source)
-    if json:
-        json_dump(items)
-    else:
-        for item in items:
-            print(item)
+        name = os.path.split(path)[1]
+        items = classify(data, source=name)
+        if json:
+            json_dump(items)
+        else:
+            for item in items:
+                print(item)
 
 
 if __name__ == "__main__":
