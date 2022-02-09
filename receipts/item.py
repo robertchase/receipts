@@ -5,15 +5,13 @@ import json
 
 class Item:
 
+    DATE = "D"
+    TOTAL = "T"
     FOOD = "F"
     NON_FOOD = "N"
     TAX = "X"
-    TOTAL = "T"
-    DATE = "D"
     VENDOR = "V"
     SOURCE = "R"
-
-    VALID_KIND = (DATE, TOTAL, FOOD, NON_FOOD, TAX, VENDOR, SOURCE)
 
     KIND_NAMES = {
         DATE: "date",
@@ -24,6 +22,8 @@ class Item:
         VENDOR: "vendor",
         SOURCE: "source",
     }
+
+    VALID_KIND = tuple(kind for kind in KIND_NAMES.keys())
 
     def __init__(self, kind, desc=None, value=None):
         self.kind = kind
