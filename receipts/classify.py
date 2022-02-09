@@ -1,3 +1,4 @@
+from decimal import Decimal
 import json
 import os.path
 
@@ -23,22 +24,17 @@ def classify(data, source=None):
 
 def json_dump(items):
 
-    date = vendor = source = None
-    for item in items:
-        if item.kind == Item.DATE:
-            date = item.value
-        elif item.kind == Item.VENDOR:
-            vendor = item.value
-        elif item.kind == Item.SOURCE:
-            source = item.value
+    base = {
+        Item.KIND_NAMES[item.kind]: item.value
+        for item in items
+        if not isinstance(item.value, Decimal)
+    }
 
     for item in items:
         if item.kind in (Item.FOOD, Item.NON_FOOD):
-            ditem = item.as_dict()
-            ditem["date"] = date
-            ditem["vendor"] = vendor
-            ditem["source"] = source
-            print(json.dumps(ditem))
+            serial = item.as_dict()
+            serial.update(base)
+            print(json.dumps(serial))
 
 
 @click.command()
