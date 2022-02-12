@@ -244,5 +244,26 @@ def _collate(input):
         print(item)
 
 
+@cli.command()
+@click.argument("input", type=click.File("r"))
+def sidebyside(input):
+    """display collated items side by side"""
+    data = input.read()
+    _, data = header(data)
+    body, _ = footer(data)
+    trimmed_body = remove_labels(body)
+    items, costs = categorize(trimmed_body)
+
+    for item in items:
+        if item.kind == Description.DESCRIPTION:
+            if len(costs):
+                cost, costs = costs[0], costs[1:]
+            else:
+                cost = None
+            print(item.kind, item.desc, cost.cost if cost else "*")
+        else:
+            print(item)
+
+
 if __name__ == "__main__":
     cli()
