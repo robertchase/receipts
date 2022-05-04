@@ -43,6 +43,11 @@ def classify(data):
             desc, discount, body = s.groups()
             yield Item(kind, desc, "-" + discount)
 
+        if (s := re.match(
+                r"(\*\*PRIME MEMBER DEAL) - ?\$(\d+\.\d\d) (.*)", body)):
+            desc, discount, body = s.groups()
+            yield Item(kind, desc, "-" + discount)
+
     while (s := re.search(r"(Tax:? \d\.\d\d%) \$(\d\.\d\d) (.*)", body)):
         desc, cost, body = s.groups()
         yield Item(Item.TAX, value=cost)

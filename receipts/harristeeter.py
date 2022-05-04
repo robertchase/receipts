@@ -30,7 +30,8 @@ def classify(data):
         elif (m := re.match(r"TAX (\d+\.\d\d) (.*)", body)):
             tax, body = m.groups()
             yield Item(Item.TAX, value=tax)
-        elif (m := re.match(r"(.*?) (\d+\.\d\d)(?:( |-)([A-Z]))? (.*)", body)):
+        elif (m := re.match(
+                r"(.*?) ((?<!@ )\d+\.\d\d)(?:( |-)([A-Z]))? (.*)", body)):
             desc, cost, sep, kind, body = m.groups()
             if desc.find("HOT FOODS") >= 0:
                 kind = Item.FOOD

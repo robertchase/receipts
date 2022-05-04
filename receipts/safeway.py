@@ -80,6 +80,7 @@ def date(data: str) -> str:
 def remove_labels(data: str) -> list[str]:
     """remove unused lines"""
     remove = [
+        "QTY",
         "1 QTY",
         "Age Restricted: 21",
         "DELI",
@@ -136,7 +137,7 @@ def categorize(data: list[str]) -> tuple[list[Item], list[Cost]]:
     for line in data:
 
         # full match
-        if (m := re.match(r"(.*?) (\d+\.\d\d) (B|T)", line)):
+        if (m := re.match(r"(.*?) (\d+\.\d\d) (B|T|Q|X)", line)):
             desc, cost, kind = m.groups()
             kind = Item.FOOD if kind == "B" else Item.NON_FOOD
             items.append(Item(kind, desc, cost))
